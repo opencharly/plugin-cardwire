@@ -118,6 +118,7 @@ func TestListReport_AbsentCardwire_GracefulExit0(t *testing.T) {
 	// graceful N/A report, exit 0.
 	old := cardwireBin
 	cardwireBin = "cardwire"
+	t.Setenv("PATH", t.TempDir()) // isolate from the host's /usr/bin/cardwire
 	defer func() { cardwireBin = old }()
 	text, err := listReport(false)
 	if err != nil {
