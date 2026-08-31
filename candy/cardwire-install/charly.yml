@@ -1,0 +1,70 @@
+version: 2026.240.1943
+cardwire-install:
+    candy:
+        version: 2026.243.0001
+        description: |-
+            CachyOS/Arch cardwire INSTALL candy — the ONLY install surface for the cardwire
+            GPU-manager (ogc/cardwire, the Open Gaming Collective's eBPF/LSM GPU-blocking
+            daemon), kept OUT of the plugin candy so a local R10 bed composing the plugin
+            (check-cardwire-local) stays NON-MUTATING on its host (R1: the install plan
+            executing inside the plugin candy during a local bed's deploy-add was observed on
+            the operator host). The check-cardwire-vm bed (opencharly/distro-cachyos, goal
+            task 4) composes THIS candy + the plugin candy, so the install runs in the guest.
+            Steps (deploy-scope, root): append the [ogc] repo to /etc/pacman.conf + trust the
+            OGC signing key F79100EF8C802DAB81C323BB8EEA5962FE510E19, pacman -Syu --needed
+            ogc/cardwire, write /etc/cardwire/cardwire.toml defaults
+            (auto_apply_gpu_state=true, experimental_nvidia_block=true,
+            battery_auto_switch=false, battery_auto_switch_mode="hybrid",
+            external_display_auto_switch=false), systemctl enable --now cardwired, add the
+            login user to video,render.
+        plan:
+            - run: add the OGC pacman repo + trust its signing key
+              id: cardwire-ogc-repo
+              run_as: root
+              command: |
+                grep -q '^[ogc]' /etc/pacman.conf || printf '\n[ogc]\nServer = https://pacman.opengamingcollective.org\n' >> /etc/pacman.conf
+                pacman-key --recv-keys F79100EF8C802DAB81C323BB8EEA5962FE510E19 2>/dev/null || true
+                pacman-key --lsign-key F79100EF8C802DAB81C323BB8EEA5962FE510E19 2>/dev/null || true
+            - run: install the ogc/cardwire package
+              id: cardwire-package
+              run_as: root
+              command: pacman -Syu --needed --noconfirm ogc/cardwire
+            - run: write the cardwire defaults (experimental_nvidia_block=true)
+              id: cardwire-toml
+              write: /etc/cardwire/cardwire.toml
+              run_as: root
+              mode: "0644"
+              content: |
+                auto_apply_gpu_state = true
+                experimental_nvidia_block = true
+                battery_auto_switch = false
+                battery_auto_switch_mode = "hybrid"
+                external_display_auto_switch = false
+            - run: enable the cardwire daemon + grant the login user video/render access
+              id: cardwire-service
+              run_as: root
+              command: |
+                systemctl enable --now cardwired
+                u="$(getent passwd 1000 | cut -d: -f1)"; [ -n "$u" ] && usermod -aG video,render "$u" || true
+            - check: the cardwire binary is installed at /usr/bin/cardwire
+              id: cardwire-binary-present
+              file:
+                file: /usr/bin/cardwire
+                exists: true
+            - check: the cardwired daemon is active
+              id: cardwired-active
+              exit_status: 0
+              stdout:
+                - contains: active
+              command: systemctl is-active cardwired
+            - check: the config file carries the experimental_nvidia_block=true default
+              id: cardwire-config-defaults
+              file:
+                file: /etc/cardwire/cardwire.toml
+                contains: "experimental_nvidia_block = true"
+            - check: the kernel enables the bpf LSM (the BPF-LSM gate cardwire's eBPF blocker needs)
+              id: bpf-lsm-gate
+              exit_status: 0
+              stdout:
+                - contains: bpf
+              command: cat /sys/kernel/security/lsm

@@ -1,0 +1,51 @@
+version: 2026.240.1943
+plugin-cardwire:
+    candy:
+        version: 2026.243.0001
+        description: |-
+            OUT-OF-TREE charly COMMAND-class plugin for the cardwire GPU-manager surface
+            (ogc/cardwire — the Open Gaming Collective's eBPF/LSM GPU-blocking daemon,
+            CachyOS/Arch first): command:cardwire (status | list | config | gpu <id>
+            block|unblock | manager). `status` is a deterministic, GPU-less-graceful host
+            report: the cardwired systemd state, the /etc/cardwire/cardwire.toml
+            whitelisted keys (auto_apply_gpu_state / experimental_nvidia_block /
+            battery_auto_switch / battery_auto_switch_mode /
+            external_display_auto_switch) and the BPF-LSM facts read DIRECTLY from
+            /sys/kernel/security/lsm (the same canonical reads plugin-bpf's status
+            performs — R3: one canonical surface, no ad-hoc copies, no shelling out to
+            charly bpf; the plugin is self-contained). `list` parses the REAL cardwire
+            list --json shape (the two-GPU fixture captured in the Phase-0 spike:
+            Virtio 1.0 GPU id 0 + NVIDIA GeForce RTX 4080 SUPER id 1) into stable
+            keys, N/A-graceful when cardwire is absent (exit 0 — the host-independent
+            check-cardwire-local bed assertion), exit 1 only on a REAL failure of an
+            installed cardwire. `config get|set <key> [value]` reads/writes the toml
+            atomically (tmp+rename, mirroring cardwire's own approach). `gpu <id>
+            block|unblock` is the MUTATING enable/disable surface: it forks
+            /usr/bin/cardwire, then VERIFIES the blocked flag actually flipped via
+            cardwire list --json (the daemon enforces mode-dependent semantics;
+            verification is the honest contract) — cardwire UNAVAILABLE → exit 1 (a
+            mutating surface refuses, never pretends). `manager status` passes through.
+
+            This candy carries NO install content: the CachyOS/Arch install plan lives
+            in the sibling candy/cardwire-install candy (the ONLY install surface),
+            keeping the check-cardwire-local R10 bed's host deploy NON-MUTATING (R1:
+            the in-plugin-candy install executed on the operator host during the local
+            bed's deploy-add). The check-cardwire-vm bed (opencharly/distro-cachyos,
+            goal task 4) composes both candies.
+        plugin:
+            source: github.com/opencharly/plugin-cardwire/candy/plugin-cardwire
+            providers:
+                - command:cardwire
+        plan:
+            - # ADE build-context check: a deterministic check that does NOT depend on the
+              # project context the `charly cardwire` CLI needs (the prescan finds this candy
+              # from the project dir). Mirrors plugin-bpf/plugin-udev — a trivial
+              # build-context `plugin: command` (the built-in command CHECK verb) running
+              # `true`, proving the host can build + fork/exec the module. The full CLI
+              # end-to-end (`charly cardwire status` / list / config graceful-N/A contracts)
+              # is exercised by the Go tests + the live R10 (check-cardwire-local).
+              check: the cardwire plugin ships a buildable Go module the host can build + fork/exec; the deterministic end-to-end (status / list / config exit-code contracts) is exercised by the check-cardwire-local bed in opencharly/charly
+              id: cardwire-module-present
+              context:
+                - build
+              command: "true"
