@@ -41,16 +41,19 @@ plugin-udev / plugin-example-command command-only precedents.
 
 ## Install plan (CachyOS/Arch deploy scope)
 
-The candy's plan is the CachyOS-first install: append the `[ogc]` pacman repo to
-/etc/pacman.conf, trust the OGC signing key
-F79100EF8C802DAB81C323BB8EEA5962FE510E19, `pacman -Syu ogc/cardwire`, write the
-/etc/cardwire/cardwire.toml defaults (experimental_nvidia_block=true), enable+start
+The CachyOS-first install lives in the sibling **`candy/cardwire-install/`** candy (the
+ONLY install surface): append the `[ogc]` pacman repo to /etc/pacman.conf, trust the OGC
+signing key F79100EF8C802DAB81C323BB8EEA5962FE510E19, `pacman -Syu ogc/cardwire`, write
+the /etc/cardwire/cardwire.toml defaults (experimental_nvidia_block=true), enable+start
 cardwired, and add the primary user to the video,render groups. Plan checks verify the
-binary, the active service, the config default and the bpf LSM gate.
+binary, the active service, the config default and the bpf LSM gate. The plugin candy
+itself carries NO install content, so the check-cardwire-local R10 bed's host deploy is
+NON-MUTATING; the check-cardwire-vm bed composes both candies.
 
 ## Layout
 
-- `candy/plugin-cardwire/` — the plugin module (command-only: `command:cardwire`).
+- `candy/plugin-cardwire/` — the plugin module (command-only: `command:cardwire`; no install content).
+- `candy/cardwire-install/` — the CachyOS/Arch install plan candy (the only install surface).
 - `cmd/serve/main.go` — the dual-mode sdk.Main entrypoint.
 
 ## Verification
