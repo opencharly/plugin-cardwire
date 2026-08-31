@@ -46,8 +46,25 @@ cardwire-install:
               command: |
                 systemctl enable --now cardwired
                 u="$(getent passwd 1000 | cut -d: -f1)"; [ -n "$u" ] && usermod -aG video,render "$u" || true
-            - check: the cardwire binary + daemon + config are installed
-              id: cardwire-installed
+            - check: the cardwire binary is installed at /usr/bin/cardwire
+              id: cardwire-binary-present
+              file:
+                file: /usr/bin/cardwire
+                exists: true
+            - check: the cardwired daemon is active
+              id: cardwired-active
               exit_status: 0
-              command: |
-                test -x /usr/bin/cardwire && systemctl is-active cardwired && grep -q 'experimental_nvidia_block = true' /etc/cardwire/cardwire.toml
+              stdout:
+                - contains: active
+              command: systemctl is-active cardwired
+            - check: the config file carries the experimental_nvidia_block=true default
+              id: cardwire-config-defaults
+              file:
+                file: /etc/cardwire/cardwire.toml
+                contains: "experimental_nvidia_block = true"
+            - check: the kernel enables the bpf LSM (the BPF-LSM gate cardwire's eBPF blocker needs)
+              id: bpf-lsm-gate
+              exit_status: 0
+              stdout:
+                - contains: bpf
+              command: cat /sys/kernel/security/lsm
