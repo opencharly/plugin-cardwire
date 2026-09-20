@@ -4,7 +4,52 @@
 # a malformed `plugin.providers` entry. See opencharly/charly#459.
 #
 # This file declares no entities of its own - it only tells charly where to look.
-version: 2026.240.1943
+version: 2026.249.2125
 discover:
     - path: candy
       recursive: true
+
+check-cardwire-local-app:
+    local:
+        description: >-
+            Minimal kind:local template for the check-cardwire-local R10 witness bed - composes the OUT-OF-TREE plugin-cardwire candy (command:cardwire) so the bed exercises the external plugin dispatch host-side: charly fork/execs the plugin binary in CLI mode for command:cardwire (host-built from source, or baked into CHARLY_PLUGIN_DIR). Mirrors check-udev-local (plugin-udev's R10 witness) and check-bpf-local (plugin-bpf's).
+        candy:
+            - plugin-cardwire
+check-cardwire-local:
+    local:
+        from: check-cardwire-local-app
+        host: local
+        disposable: true
+        description: >-
+            R10 witness for the plugin-cardwire COMMAND dispatch on a cardwire-less host: the graceful N/A contracts ARE the assertions — command:cardwire status exits 0 with the deterministic report header (cardwired systemd state + config keys + direct /sys/kernel/security/lsm BPF-LSM facts), command:cardwire list exits 0 with the graceful N/A report, and command:cardwire config get exits 0 with the missing-file N/A report. Run on a host where cardwire is REMOVED (the bed is non-mutating by design; the install path is covered by the check-cardwire-vm in-guest bed).
+        plan:
+            - check: command=cardwire status exits 0 and prints the deterministic report header (CLI dispatch, read-only)
+              id: e2e-cardwire-status
+              exit_status: 0
+              stdout:
+                - contains: 'cardwire status report'
+              context:
+                - runtime
+              command:
+                command: ${CHARLY_BIN} cardwire status
+                in_container: false
+            - check: command=cardwire list exits 0 with the graceful N/A report on a cardwire-less host (host-independent assertion)
+              id: e2e-cardwire-list-na
+              exit_status: 0
+              stdout:
+                - contains: 'CARDWIRE UNAVAILABLE'
+              context:
+                - runtime
+              command:
+                command: ${CHARLY_BIN} cardwire list
+                in_container: false
+            - check: command=cardwire config get exits 0 with N/A on a cardwire-less host (missing config file)
+              id: e2e-cardwire-config-na
+              exit_status: 0
+              stdout:
+                - contains: 'N/A (config file'
+              context:
+                - runtime
+              command:
+                command: ${CHARLY_BIN} cardwire config get experimental_nvidia_block
+                in_container: false
