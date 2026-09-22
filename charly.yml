@@ -3,7 +3,7 @@
 # so `charly box validate` at the repo root exits 0 on ANY manifest, including one with
 # a malformed `plugin.providers` entry. See opencharly/charly#459.
 #
-# This file declares no entities of its own - it only tells charly where to look.
+# This file also declares the R10 witness bed (below).
 version: 2026.249.2125
 discover:
     - path: candy
