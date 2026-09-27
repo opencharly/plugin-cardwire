@@ -32,20 +32,27 @@
 package cardwire
 
 import (
+	"embed"
+
 	"github.com/opencharly/sdk"
 	pb "github.com/opencharly/spec/proto"
 )
+
+//go:embed schema/*.cue
+var schemaFS embed.FS
 
 // NewProvider returns the cardwire provider (inert — command-only plugin).
 func NewProvider() pb.ProviderServer { return &provider{} }
 
 // NewMeta advertises NO gRPC capability — command:cardwire is CLI-dispatched, not
-// resolved through the gRPC provider registry (mirrors plugin-udev; nil schema since
-// there is no verb input to validate).
+// resolved through the gRPC provider registry (mirrors plugin-udev) — but it still ships
+// this plugin's OWN self-contained CUE schema (schema/cardwire.cue) over Describe via
+// sdk.NewMeta: there is NO schema-less plugin, the schema is the uniform surface every
+// plugin presents.
 func NewMeta() pb.PluginMetaServer {
 	return sdk.NewMeta("2026.243.0001",
 		[]sdk.ProvidedCapability{},
-		nil)
+		schemaFS)
 }
 
 // CliMain is the plugin's CLI entrypoint (command:cardwire dispatch).
