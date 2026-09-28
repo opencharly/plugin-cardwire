@@ -1,7 +1,5 @@
-version: 2026.240.1943
 plugin-cardwire:
     candy:
-        version: 2026.243.0001
         description: |-
             OUT-OF-TREE charly COMMAND-class plugin for the cardwire GPU-manager surface
             (ogc/cardwire — the Open Gaming Collective's eBPF/LSM GPU-blocking daemon,
