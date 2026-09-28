@@ -4,7 +4,6 @@
 # a malformed `plugin.providers` entry. See opencharly/charly#459.
 #
 # This file also declares the R10 witness bed (below).
-version: 2026.249.2125
 discover:
     - path: candy
       recursive: true

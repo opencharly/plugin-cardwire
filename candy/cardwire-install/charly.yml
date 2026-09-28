@@ -1,7 +1,5 @@
-version: 2026.240.1943
 cardwire-install:
     candy:
-        version: 2026.243.0001
         description: |-
             CachyOS/Arch cardwire INSTALL candy — the ONLY install surface for the cardwire
             GPU-manager (ogc/cardwire, the Open Gaming Collective's eBPF/LSM GPU-blocking
